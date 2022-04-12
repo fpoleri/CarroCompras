@@ -48,7 +48,7 @@ app.post('/registro', async (req, res) => {
     //si esta todo bien, ahora encripto la clave, siempre guardar las claves en la base de datos, encriptadas
     const claveEncriptada = await bcrypt.hash(req.body.clave, 10); // el 10 es una valor de referencia para bcrypt 
     // guardo el usuario con la clave encriptada
-    const nuecoUsuario = {
+    const nuevoUsuario = {
       usuario: req.body.usuario,
       clave: claveEncriptada,
       email: req.body.email,
@@ -66,6 +66,7 @@ app.post('/registro', async (req, res) => {
   }
 });
 
+
 // Paso 2 Login
 app.post('/login', async (req, res) => {
   try {
@@ -75,17 +76,19 @@ app.post('/login', async (req, res) => {
     // paso 1: encuentro el usuario
     let query = 'SELECT * FROM registro WHERE usuario = ?';
     let respuesta = await qy(query, [req.body.usuario]);
+
     if (respuesta.length == 0) {
       throw new Error('el usuario ingresado no existe')
+   
     }
+  
     // paso 2: verificar la clave
-    query = 'SELECT * FROM registro WHERE clave = ?'
-    respuesta = await qy(query,[req.body.clave]);
+    const claveEncriptada= respuesta[0].clave;
    if (!bcrypt.compareSync(req.body.clave, claveEncriptada)) {
       throw new Error('la contraseña es incorrecta');
     }
-  
-// Paso 3 SESION
+
+  //Paso 3 SESION
     // agrego sesion al usuario, que se hace generando un Token. Generamos una sesion
     const tokenData = {
       usuario: req.body.usuario,
@@ -96,13 +99,14 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign(tokenData, 'Secret', {
       expiresIn: 60 * 60 * 24 // expira en 24hrs
     })
-    res.send({ token });
-    res.send({ "message": 'felicitaciones te has logiado con exito' });
+   res.send({ token });
+   // res.send({ "message": 'felicitaciones te has logiado con exito' });
     console.log('loguiado con existo');
   }
   catch (e) {
     res.status(413).send({ "message": e.message });
   }
+  
 
 });
 
